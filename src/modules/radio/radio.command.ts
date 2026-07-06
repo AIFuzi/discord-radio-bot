@@ -1,7 +1,13 @@
-import { Context, SlashCommand, type SlashCommandContext } from 'necord'
+import {
+  Context,
+  Options,
+  SlashCommand,
+  type SlashCommandContext,
+} from 'necord'
 import { lastValueFrom } from 'rxjs'
 
 import { Injectable } from '@nestjs/common'
+import { GetMetadataDto } from '@/src/modules/radio/dto/option'
 
 import { RadioService } from './radio.service'
 
@@ -13,11 +19,13 @@ export class RadioCommand {
     name: 'test-metadata',
     description: 'Get the radio metadata',
   })
-  async getRadioStationMetadata(@Context() [ctx]: SlashCommandContext) {
+  async getRadioStationMetadata(
+    @Context() [ctx]: SlashCommandContext,
+    @Options() { station }: GetMetadataDto,
+  ) {
     const { data } = await lastValueFrom(
-      this.radioService.getRadioStationMetadata(),
+      this.radioService.getRadioStationMetadata(station),
     )
-    console.log(data)
 
     return ctx.reply(data.artist)
   }

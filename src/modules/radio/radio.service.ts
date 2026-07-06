@@ -5,7 +5,7 @@ import { HttpService } from '@nestjs/axios'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { GetRadioStationResponse } from '@/src/modules/radio/dto/response'
-import { RadioStation } from '@/src/shared'
+import { RadioStation, radioStationKeys } from '@/src/shared'
 
 @Injectable()
 export class RadioService {
@@ -15,12 +15,12 @@ export class RadioService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.url = this.configService.getOrThrow<string>('API_URL')
+    this.url = this.configService.getOrThrow<string>('API_INFO_URL')
   }
 
-  getRadioStationMetadata(): Observable<
-    AxiosResponse<GetRadioStationResponse>
-  > {
-    return this.httpService.get(`${this.url}/${RadioStation.jpop}`)
+  getRadioStationMetadata(
+    station: radioStationKeys,
+  ): Observable<AxiosResponse<GetRadioStationResponse>> {
+    return this.httpService.get(`${this.url}/${RadioStation[station]?.infoId}`)
   }
 }
