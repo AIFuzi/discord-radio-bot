@@ -6,5 +6,6 @@ export function getDiscordConfig(configService: ConfigService) {
   return {
     token: configService.getOrThrow<string>('DISCORD_TOKEN'),
     intents: [IntentsBitField.Flags.Guilds],
+    development: [configService.getOrThrow<string>('DISCORD_SERVER_ID')],
   }
 }
