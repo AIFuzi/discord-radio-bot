@@ -5,7 +5,7 @@ import { lastValueFrom } from 'rxjs'
 import { HttpService } from '@nestjs/axios'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { GetRadioStationResponse } from '@/src/modules/bot/dto/response'
+import type { GetRadioStationResponse } from '@/src/modules/bot/dto'
 import {
   isRadioStationKey,
   RadioStation,
@@ -78,7 +78,7 @@ export class BotService {
         `Song: ${data.artist} ・ ${data.song}\n\n${data.lyrics.length > 0 ? `Lyrics: ${data.lyrics.slice(0, 168)}...` : ''}`,
       )
       .setImage(data.artwork)
-      .setColor(7419530)
+      .setColor(14245942)
 
     return ctx.reply({
       embeds: [embed],
