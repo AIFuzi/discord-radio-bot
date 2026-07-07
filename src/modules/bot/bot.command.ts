@@ -32,4 +32,15 @@ export class BotCommand {
   ) {
     return this.botService.playRadioStation([ctx], station)
   }
+
+  @SlashCommand({
+    name: 'info',
+    description: 'Get radio station info',
+  })
+  async getRadioStationInfo(
+    @Context() [ctx]: SlashCommandContext,
+    @Options() { station }: RadioStationDto,
+  ) {
+    return this.botService.getRadioStationInfo([ctx], station)
+  }
 }

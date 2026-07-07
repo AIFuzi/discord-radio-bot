@@ -1,3 +1,11 @@
+type historyType = {
+  song: string
+  artist: string
+  artwork: string
+  timestamp: string
+  relative_time: string
+}
+
 export type GetRadioStationResponse = {
   name: string
   bitrate: number
@@ -17,4 +25,5 @@ export type GetRadioStationResponse = {
   explicit: boolean
   songFound: boolean
   metadataFound: boolean
+  history: historyType[]
 }

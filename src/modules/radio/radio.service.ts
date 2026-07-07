@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { HttpService } from '@nestjs/axios'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { GetRadioStationResponse } from '@/src/modules/radio/dto/response'
+import { GetRadioStationResponse } from '@/src/modules/bot/dto/response'
 import { RadioStation, radioStationKeys } from '@/src/shared'
 
 @Injectable()
