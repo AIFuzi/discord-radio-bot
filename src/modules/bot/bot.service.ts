@@ -14,6 +14,7 @@ import {
 import {
   createAudioPlayer,
   createAudioResource,
+  getVoiceConnection,
   joinVoiceChannel,
   VoiceConnection,
 } from '@discordjs/voice'
@@ -41,7 +42,10 @@ export class BotService {
 
     const { connection, memberInfo } = this.createConnection([ctx])
     if (!connection) {
-      return ctx.reply('You are not in the voice channel or invalid member')
+      return ctx.reply({
+        content: 'You are not in the voice channel or invalid member',
+        ephemeral: true,
+      })
     }
 
     const player = createAudioPlayer()
@@ -78,11 +82,31 @@ export class BotService {
         `Song: ${data.artist} ・ ${data.song}\n\n${data.lyrics.length > 0 ? `Lyrics: ${data.lyrics.slice(0, 168)}...` : ''}`,
       )
       .setImage(data.artwork)
-      .setColor(14245942)
+      .setColor(Math.floor(Math.random() * 1000000))
 
     return ctx.reply({
       embeds: [embed],
     })
+  }
+
+  help([ctx]: SlashCommandContext) {
+    return ctx.reply({
+      content: `==COMMANDS==\n/play "station-name" - start play selected station\n/info "station-name" - get current track selected station\n/join - join bot to voice chat\n\n== STATIONS ==\n**jpop** - Japan pop station\n**kpop** - Japan pop station\n**anime** - Japan pop station\n**japancity** - Japan pop station\n**rock** - Japan pop station`,
+    })
+  }
+
+  async disconnect([ctx]: SlashCommandContext) {
+    const connection = getVoiceConnection(ctx.guildId!)
+    if (!connection) {
+      return ctx.reply({
+        content: 'Bot is not in the voice channel',
+        ephemeral: true,
+      })
+    }
+
+    connection.destroy()
+
+    return ctx.reply('Bot disconnected')
   }
 
   private createConnection([ctx]: SlashCommandContext): {

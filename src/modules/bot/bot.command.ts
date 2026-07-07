@@ -43,4 +43,20 @@ export class BotCommand {
   ) {
     return this.botService.getRadioStationInfo([ctx], station)
   }
+
+  @SlashCommand({
+    name: 'help',
+    description: 'Radio bot command helps',
+  })
+  async help(@Context() [ctx]: SlashCommandContext) {
+    return this.botService.help([ctx])
+  }
+
+  @SlashCommand({
+    name: 'disconnect',
+    description: 'Disconnect bot voice chat',
+  })
+  async disconnect(@Context() [ctx]: SlashCommandContext) {
+    return this.botService.disconnect([ctx])
+  }
 }
