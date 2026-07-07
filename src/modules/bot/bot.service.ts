@@ -1,5 +1,11 @@
-import { EmbedBuilder, GuildMember } from 'discord.js'
-import { type SlashCommandContext } from 'necord'
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  GuildMember,
+} from 'discord.js'
+import { ButtonContext, type SlashCommandContext } from 'necord'
 import { lastValueFrom } from 'rxjs'
 
 import { HttpService } from '@nestjs/axios'
@@ -10,8 +16,10 @@ import {
   isRadioStationKey,
   RadioStation,
   type radioStationKeys,
+  radioTypes,
 } from '@/src/shared'
 import {
+  AudioPlayer,
   AudioPlayerStatus,
   createAudioPlayer,
   createAudioResource,
@@ -23,11 +31,14 @@ import {
 @Injectable()
 export class BotService {
   private readonly logger = new Logger(BotService.name)
+  private readonly player: AudioPlayer
 
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-  ) {}
+  ) {
+    this.player = createAudioPlayer()
+  }
 
   async joinToVoiceChannel([ctx]: SlashCommandContext) {
     this.createConnection([ctx])
@@ -39,11 +50,70 @@ export class BotService {
     [ctx]: SlashCommandContext,
     station: radioStationKeys,
   ) {
-    if (!isRadioStationKey(station)) {
-      return ctx.reply({ content: 'Invalid station', ephemeral: true })
-    }
+    return ctx.reply('Function timeout showdown')
 
-    const { connection, memberInfo } = this.createConnection([ctx])
+    // if (!isRadioStationKey(station)) {
+    //   return ctx.reply({ content: 'Invalid station', ephemeral: true })
+    // }
+    //
+    // const { connection, memberInfo } = this.createConnection([ctx])
+    // if (!connection) {
+    //   return ctx.reply({
+    //     content: 'You are not in the voice channel or invalid member',
+    //     ephemeral: true,
+    //   })
+    // }
+    //
+    // connection.subscribe(this.player)
+    //
+    // const resource = createAudioResource(
+    //   `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
+    // )
+    //
+    // this.player.play(resource)
+    //
+    // this.player.on('stateChange', newState => {
+    //   this.logger.debug('State change', newState.status)
+    //
+    //   if (newState.status === AudioPlayerStatus.Idle) {
+    //     const resource = createAudioResource(
+    //       `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
+    //     )
+    //
+    //     this.player.play(resource)
+    //
+    //     this.logger.debug('Audio player restarted')
+    //   }
+    // })
+    //
+    // const embed = new EmbedBuilder()
+    //   .setTitle(`Bot connected to channel: ${memberInfo?.voice.channel}`)
+    //   .setDescription(`Playing radio station: ${station.toUpperCase()}`)
+    //   .setImage(RadioStation[station]!.artwork)
+    //   .setColor(RadioStation[station]?.color ?? 16777215)
+    //
+    // return ctx.reply({ embeds: [embed] })
+  }
+
+  async selectRadio([ctx]: SlashCommandContext) {
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      radioTypes.map(rt =>
+        new ButtonBuilder()
+          .setCustomId(`radio-select/${rt}`)
+          .setLabel(rt)
+          .setStyle(ButtonStyle.Primary),
+      ),
+    )
+
+    return ctx.reply({
+      components: [buttons],
+    })
+  }
+
+  async startPlayingSelectedRadio([ctx]: ButtonContext, value: string) {
+    const memberInfo = ctx.member as GuildMember
+
+    const connection = getVoiceConnection(ctx.guildId!)
     if (!connection) {
       return ctx.reply({
         content: 'You are not in the voice channel or invalid member',
@@ -51,32 +121,40 @@ export class BotService {
       })
     }
 
-    const player = createAudioPlayer()
-    connection.subscribe(player)
+    connection.subscribe(this.player)
 
     const resource = createAudioResource(
-      `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
+      `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[value]?.radioId}`,
     )
 
-    player.play(resource)
+    this.player.play(resource)
 
-    player.on('stateChange', (oldState, newState) => {
-      if (newState.status === AudioPlayerStatus.Idle) {
+    this.player.on('stateChange', newState => {
+      this.logger.log('State change', newState.status)
+
+      if (
+        newState.status === AudioPlayerStatus.Idle ||
+        newState.status === AudioPlayerStatus.Playing
+      ) {
         const resource = createAudioResource(
-          `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
+          `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[value]?.radioId}`,
         )
 
-        player.play(resource)
+        this.player.play(resource)
 
         this.logger.debug('Audio player restarted')
       }
     })
 
+    this.player.on('error', err => {
+      this.logger.error(err)
+    })
+
     const embed = new EmbedBuilder()
       .setTitle(`Bot connected to channel: ${memberInfo?.voice.channel}`)
-      .setDescription(`Playing radio station: ${station.toUpperCase()}`)
-      .setImage(RadioStation[station]!.artwork)
-      .setColor(RadioStation[station]?.color ?? 16777215)
+      .setDescription(`Playing radio station: ${value.toUpperCase()}`)
+      .setImage(RadioStation[value]!.artwork)
+      .setColor(RadioStation[value]?.color ?? 16777215)
 
     return ctx.reply({ embeds: [embed] })
   }

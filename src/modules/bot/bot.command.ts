@@ -1,4 +1,7 @@
 import {
+  Button,
+  type ButtonContext,
+  ComponentParam,
   Context,
   Options,
   SlashCommand,
@@ -7,6 +10,7 @@ import {
 
 import { Injectable } from '@nestjs/common'
 import { RadioStationDto } from '@/src/modules/bot/dto'
+import { jpopStation } from '@/src/shared/stations'
 
 import { BotService } from './bot.service'
 
@@ -31,6 +35,22 @@ export class BotCommand {
     @Options() { station }: RadioStationDto,
   ) {
     return this.botService.playRadioStation([ctx], station)
+  }
+
+  @SlashCommand({
+    name: 'select-radio',
+    description: 'Select radio station',
+  })
+  async selectRadio(@Context() [ctx]: SlashCommandContext) {
+    return this.botService.selectRadio([ctx])
+  }
+
+  @Button('radio-select/:value')
+  public onButton(
+    @Context() [ctx]: ButtonContext,
+    @ComponentParam('value') value: string,
+  ) {
+    return this.botService.startPlayingSelectedRadio([ctx], value)
   }
 
   @SlashCommand({
