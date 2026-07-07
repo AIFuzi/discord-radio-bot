@@ -70,23 +70,27 @@ export class BotService {
     [ctx]: SlashCommandContext,
     station: radioStationKeys,
   ) {
-    const url = `${this.configService.getOrThrow<string>('API_INFO_URL')}${RadioStation[station]?.infoId}`
+    try {
+      const url = `${this.configService.getOrThrow<string>('API_INFO_URL')}${RadioStation[station]?.infoId}`
 
-    const { data } = await lastValueFrom(
-      this.httpService.get<GetRadioStationResponse>(url),
-    )
-
-    const embed = new EmbedBuilder()
-      .setTitle(`Radio station: ${data.name}`)
-      .setDescription(
-        `Song: ${data.artist} ・ ${data.song}\n\n${data.lyrics.length > 0 ? `Lyrics: ${data.lyrics.slice(0, 168)}...` : ''}`,
+      const { data } = await lastValueFrom(
+        this.httpService.get<GetRadioStationResponse>(url),
       )
-      .setImage(data.artwork)
-      .setColor(Math.floor(Math.random() * 1000000))
 
-    return ctx.reply({
-      embeds: [embed],
-    })
+      const embed = new EmbedBuilder()
+        .setTitle(`Radio station: ${data.name}`)
+        .setDescription(
+          `Song: ${data.artist} ・ ${data.song}\n\n${data.lyrics.length > 0 ? `Lyrics: ${data.lyrics.slice(0, 168)}...` : ''}`,
+        )
+        .setImage(data.artwork)
+        .setColor(Math.floor(Math.random() * 1000000))
+
+      return ctx.reply({
+        embeds: [embed],
+      })
+    } catch (error) {
+      return ctx.reply(`[FATAL ERROR]: ${error.message}`)
+    }
   }
 
   help([ctx]: SlashCommandContext) {

@@ -9,6 +9,9 @@ export function getDiscordConfig(configService: ConfigService) {
       IntentsBitField.Flags.Guilds,
       IntentsBitField.Flags.GuildVoiceStates,
     ],
-    development: [configService.getOrThrow<string>('DISCORD_SERVER_ID')],
+    development:
+      configService.getOrThrow<string>('NODE_ENV') !== 'development'
+        ? [configService.getOrThrow<string>('DISCORD_SERVER_ID')]
+        : [],
   }
 }
