@@ -3,7 +3,7 @@ import { type SlashCommandContext } from 'necord'
 import { lastValueFrom } from 'rxjs'
 
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { GetRadioStationResponse } from '@/src/modules/bot/dto'
 import {
@@ -12,6 +12,7 @@ import {
   type radioStationKeys,
 } from '@/src/shared'
 import {
+  AudioPlayerStatus,
   createAudioPlayer,
   createAudioResource,
   getVoiceConnection,
@@ -21,6 +22,8 @@ import {
 
 @Injectable()
 export class BotService {
+  private readonly logger = new Logger(BotService.name)
+
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
@@ -56,6 +59,18 @@ export class BotService {
     )
 
     player.play(resource)
+
+    player.on('stateChange', (oldState, newState) => {
+      if (newState.status === AudioPlayerStatus.Idle) {
+        const resource = createAudioResource(
+          `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
+        )
+
+        player.play(resource)
+
+        this.logger.debug('Audio player restarted')
+      }
+    })
 
     const embed = new EmbedBuilder()
       .setTitle(`Bot connected to channel: ${memberInfo?.voice.channel}`)
@@ -132,6 +147,7 @@ export class BotService {
         channelId: channel.id,
         guildId: ctx.guildId!,
         adapterCreator: ctx.guild!.voiceAdapterCreator,
+        selfDeaf: false,
       }),
       memberInfo: member,
     }
