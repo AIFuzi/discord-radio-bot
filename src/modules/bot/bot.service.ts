@@ -12,12 +12,7 @@ import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { GetRadioStationResponse } from '@/src/modules/bot/dto'
-import {
-  isRadioStationKey,
-  RadioStation,
-  type radioStationKeys,
-  radioTypes,
-} from '@/src/shared'
+import { RadioStation, radioTypes } from '@/src/shared'
 import {
   AudioPlayer,
   AudioPlayerStatus,
@@ -46,56 +41,15 @@ export class BotService {
     return ctx.reply('Bot joined to voice chat')
   }
 
-  async playRadioStation(
-    [ctx]: SlashCommandContext,
-    station: radioStationKeys,
-  ) {
-    return ctx.reply('Function timeout showdown')
-
-    // if (!isRadioStationKey(station)) {
-    //   return ctx.reply({ content: 'Invalid station', ephemeral: true })
-    // }
-    //
-    // const { connection, memberInfo } = this.createConnection([ctx])
-    // if (!connection) {
-    //   return ctx.reply({
-    //     content: 'You are not in the voice channel or invalid member',
-    //     ephemeral: true,
-    //   })
-    // }
-    //
-    // connection.subscribe(this.player)
-    //
-    // const resource = createAudioResource(
-    //   `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
-    // )
-    //
-    // this.player.play(resource)
-    //
-    // this.player.on('stateChange', newState => {
-    //   this.logger.debug('State change', newState.status)
-    //
-    //   if (newState.status === AudioPlayerStatus.Idle) {
-    //     const resource = createAudioResource(
-    //       `${this.configService.getOrThrow<string>('API_RADIO_URL')}${RadioStation[station]?.radioId}`,
-    //     )
-    //
-    //     this.player.play(resource)
-    //
-    //     this.logger.debug('Audio player restarted')
-    //   }
-    // })
-    //
-    // const embed = new EmbedBuilder()
-    //   .setTitle(`Bot connected to channel: ${memberInfo?.voice.channel}`)
-    //   .setDescription(`Playing radio station: ${station.toUpperCase()}`)
-    //   .setImage(RadioStation[station]!.artwork)
-    //   .setColor(RadioStation[station]?.color ?? 16777215)
-    //
-    // return ctx.reply({ embeds: [embed] })
-  }
-
   async selectRadio([ctx]: SlashCommandContext) {
+    const connection = getVoiceConnection(ctx.guildId!)
+    if (!connection) {
+      const newConnection = this.createConnection([ctx])
+      if (!newConnection) {
+        return ctx.reply({ content: 'You not in voice chat', ephemeral: true })
+      }
+    }
+
     const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
       radioTypes.map(rt =>
         new ButtonBuilder()
@@ -106,6 +60,7 @@ export class BotService {
     )
 
     return ctx.reply({
+      content: 'Select radio station:',
       components: [buttons],
     })
   }
@@ -130,8 +85,6 @@ export class BotService {
     this.player.play(resource)
 
     this.player.on('stateChange', newState => {
-      this.logger.log('State change', newState.status)
-
       if (
         newState.status === AudioPlayerStatus.Idle ||
         newState.status === AudioPlayerStatus.Playing
@@ -159,12 +112,25 @@ export class BotService {
     return ctx.reply({ embeds: [embed] })
   }
 
-  async getRadioStationInfo(
-    [ctx]: SlashCommandContext,
-    station: radioStationKeys,
-  ) {
+  async selectRadioStationInfo([ctx]: SlashCommandContext) {
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      radioTypes.map(rt =>
+        new ButtonBuilder()
+          .setCustomId(`radio-info-select/${rt}`)
+          .setLabel(rt)
+          .setStyle(ButtonStyle.Primary),
+      ),
+    )
+
+    return ctx.reply({
+      content: 'Select radio station: ',
+      components: [buttons],
+    })
+  }
+
+  async getSelectedRadioInfo([ctx]: ButtonContext, value: string) {
     try {
-      const url = `${this.configService.getOrThrow<string>('API_INFO_URL')}${RadioStation[station]?.infoId}`
+      const url = `${this.configService.getOrThrow<string>('API_INFO_URL')}${RadioStation[value]?.infoId}`
 
       const { data } = await lastValueFrom(
         this.httpService.get<GetRadioStationResponse>(url),
@@ -202,6 +168,7 @@ export class BotService {
     }
 
     connection.destroy()
+    this.player.stop()
 
     return ctx.reply('Bot disconnected')
   }

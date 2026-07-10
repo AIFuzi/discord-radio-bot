@@ -3,14 +3,11 @@ import {
   type ButtonContext,
   ComponentParam,
   Context,
-  Options,
   SlashCommand,
   type SlashCommandContext,
 } from 'necord'
 
 import { Injectable } from '@nestjs/common'
-import { RadioStationDto } from '@/src/modules/bot/dto'
-import { jpopStation } from '@/src/shared/stations'
 
 import { BotService } from './bot.service'
 
@@ -28,17 +25,6 @@ export class BotCommand {
 
   @SlashCommand({
     name: 'play',
-    description: 'Play selected radio station',
-  })
-  async playRadioStation(
-    @Context() [ctx]: SlashCommandContext,
-    @Options() { station }: RadioStationDto,
-  ) {
-    return this.botService.playRadioStation([ctx], station)
-  }
-
-  @SlashCommand({
-    name: 'select-radio',
     description: 'Select radio station',
   })
   async selectRadio(@Context() [ctx]: SlashCommandContext) {
@@ -46,7 +32,7 @@ export class BotCommand {
   }
 
   @Button('radio-select/:value')
-  public onButton(
+  public onPlayRadio(
     @Context() [ctx]: ButtonContext,
     @ComponentParam('value') value: string,
   ) {
@@ -57,11 +43,16 @@ export class BotCommand {
     name: 'info',
     description: 'Get radio station info',
   })
-  async getRadioStationInfo(
-    @Context() [ctx]: SlashCommandContext,
-    @Options() { station }: RadioStationDto,
+  async selectRadioStationInfo(@Context() [ctx]: SlashCommandContext) {
+    return this.botService.selectRadioStationInfo([ctx])
+  }
+
+  @Button('radio-info-select/:value')
+  public onRadioInfo(
+    @Context() [ctx]: ButtonContext,
+    @ComponentParam('value') value: string,
   ) {
-    return this.botService.getRadioStationInfo([ctx], station)
+    return this.botService.getSelectedRadioInfo([ctx], value)
   }
 
   @SlashCommand({
